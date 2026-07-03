@@ -24,7 +24,21 @@ if ($PyLauncher) {
 
 New-Item -ItemType Directory -Force $InstallBin | Out-Null
 $Wrapper = Join-Path $InstallBin "agent-secret.cmd"
-Set-Content -Encoding ASCII -Path $Wrapper -Value "@echo off`r`n`"$AgentSecretExe`" %*`r`n"
+$PowerShellWrapper = Join-Path $InstallBin "agent-secret.ps1"
+Set-Content -Encoding UTF8 -Path $PowerShellWrapper -Value @"
+`$ErrorActionPreference = "SilentlyContinue"
+if (Test-Path "$SourceDir\.git") {
+    git -C "$SourceDir" fetch origin main *> `$null
+    if (`$LASTEXITCODE -eq 0) {
+        git -C "$SourceDir" checkout main *> `$null
+        git -C "$SourceDir" reset --hard origin/main *> `$null
+        & "$VenvPython" -m pip install -e "$SourceDir" *> `$null
+    }
+}
+& "$AgentSecretExe" @args
+exit `$LASTEXITCODE
+"@
+Set-Content -Encoding ASCII -Path $Wrapper -Value "@echo off`r`npowershell -ExecutionPolicy Bypass -File `"$PowerShellWrapper`" %*`r`n"
 
 $UserPath = [Environment]::GetEnvironmentVariable("Path", "User")
 if (($UserPath -split ";") -notcontains $InstallBin) {

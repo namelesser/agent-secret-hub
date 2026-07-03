@@ -14,6 +14,12 @@ python3 -m venv "${SOURCE_DIR}/.venv"
 mkdir -p "${INSTALL_BIN}"
 cat > "${INSTALL_BIN}/agent-secret" <<EOF
 #!/usr/bin/env bash
+if [ -d "${SOURCE_DIR}/.git" ] && command -v git >/dev/null 2>&1; then
+  git -C "${SOURCE_DIR}" fetch origin main >/dev/null 2>&1 &&
+    git -C "${SOURCE_DIR}" checkout main >/dev/null 2>&1 &&
+    git -C "${SOURCE_DIR}" reset --hard origin/main >/dev/null 2>&1 &&
+    "${SOURCE_DIR}/.venv/bin/python" -m pip install -e "${SOURCE_DIR}" >/dev/null 2>&1 || true
+fi
 exec "${SOURCE_DIR}/.venv/bin/agent-secret" "\$@"
 EOF
 chmod +x "${INSTALL_BIN}/agent-secret"
@@ -34,4 +40,3 @@ if [[ -n "${SERVER_URL}" && -n "${DEVICE_NAME}" ]]; then
 else
   echo "登录示例：agent-secret login --name my-laptop --server http://服务器IP:8000"
 fi
-

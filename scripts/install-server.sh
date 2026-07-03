@@ -9,6 +9,7 @@ DB_NAME="${DB_NAME:-agent_secret_hub}"
 DB_USER="${DB_USER:-agent_secret}"
 HOST="${HOST:-0.0.0.0}"
 PORT="${PORT:-8000}"
+BRANCH="${BRANCH:-main}"
 
 if [[ "${EUID}" -ne 0 ]]; then
   echo "请用 root 运行：sudo bash scripts/install-server.sh"
@@ -18,14 +19,17 @@ fi
 SOURCE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 echo "==> 安装系统依赖"
-apt-get update -y
-DEBIAN_FRONTEND=noninteractive apt-get install -y \
-  git \
-  postgresql \
-  python3 \
-  python3-pip \
-  python3-venv \
-  rsync
+missing_packages=()
+command -v git >/dev/null 2>&1 || missing_packages+=(git)
+command -v psql >/dev/null 2>&1 || missing_packages+=(postgresql)
+command -v python3 >/dev/null 2>&1 || missing_packages+=(python3)
+python3 -m pip --version >/dev/null 2>&1 || missing_packages+=(python3-pip)
+python3 -m venv --help >/dev/null 2>&1 || missing_packages+=(python3-venv)
+
+if (( ${#missing_packages[@]} > 0 )); then
+  apt-get update -y
+  DEBIAN_FRONTEND=noninteractive apt-get install -y "${missing_packages[@]}"
+fi
 
 DB_PASSWORD="${DB_PASSWORD:-$(python3 - <<'PY'
 import secrets
@@ -35,11 +39,20 @@ PY
 
 echo "==> 准备应用目录：${INSTALL_DIR}"
 mkdir -p "${INSTALL_DIR}"
-rsync -a --delete \
-  --exclude ".git" \
-  --exclude ".venv" \
-  --exclude "__pycache__" \
-  "${SOURCE_DIR}/" "${INSTALL_DIR}/"
+SOURCE_REAL="$(cd "${SOURCE_DIR}" && pwd -P)"
+INSTALL_REAL="$(cd "${INSTALL_DIR}" && pwd -P)"
+if [[ "${SOURCE_REAL}" != "${INSTALL_REAL}" ]]; then
+  rm -rf "${INSTALL_DIR}"
+  mkdir -p "${INSTALL_DIR}"
+  tar \
+    --exclude ".git" \
+    --exclude ".venv" \
+    --exclude "__pycache__" \
+    -C "${SOURCE_DIR}" \
+    -cf - . | tar -C "${INSTALL_DIR}" -xf -
+else
+  echo "当前源码目录就是安装目录，跳过复制。"
+fi
 
 echo "==> 初始化 PostgreSQL"
 systemctl enable --now postgresql
@@ -86,6 +99,8 @@ Wants=network-online.target
 Type=simple
 WorkingDirectory=${INSTALL_DIR}
 EnvironmentFile=${ENV_FILE}
+ExecStartPre=/bin/bash -lc 'if [ -d .git ]; then git fetch origin ${BRANCH} && git checkout ${BRANCH} && git reset --hard origin/${BRANCH}; fi || true'
+ExecStartPre=/bin/bash -lc '${INSTALL_DIR}/.venv/bin/python -m pip install -e ${INSTALL_DIR} >/tmp/agent-secret-hub-pip.log 2>&1 || true'
 ExecStart=${INSTALL_DIR}/.venv/bin/python -m uvicorn app.main:app --host ${HOST} --port ${PORT}
 Restart=always
 RestartSec=3
@@ -96,6 +111,9 @@ EOF
 
 systemctl daemon-reload
 systemctl enable --now "${APP_NAME}"
+if command -v ufw >/dev/null 2>&1; then
+  ufw allow "${PORT}/tcp" || true
+fi
 
 echo
 echo "安装完成。"

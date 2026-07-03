@@ -20,23 +20,24 @@
 https://github.com/namelesser/agent-secret-hub
 ```
 
-如果仓库是 private，先在目标机器上配置 GitHub 访问权限，再 `git clone`。
+建议把仓库设置为 public，这样服务端和客户端都可以用一条命令安装。
 
-```bash
-git clone https://github.com/namelesser/agent-secret-hub.git
-cd agent-secret-hub
-```
+安装后会自动更新：
 
-## 一键安装服务端 Ubuntu
+- 服务端：systemd 每次启动服务前自动 `git pull` 并重新安装当前包
+- 客户端：每次运行 `agent-secret` 包装命令前自动 `git pull` 并重新安装当前包
+
+## 一条命令安装服务端 Ubuntu
 
 在服务器上执行：
 
 ```bash
-sudo bash scripts/install-server.sh
+curl -fsSL https://raw.githubusercontent.com/namelesser/agent-secret-hub/main/scripts/install-server-from-github.sh | sudo bash
 ```
 
 脚本会自动完成：
 
+- 从 GitHub 拉取项目到 `/opt/agent-secret-hub`
 - 安装 Python、PostgreSQL、git、rsync
 - 创建 PostgreSQL 数据库 `agent_secret_hub`
 - 创建数据库用户 `agent_secret`
@@ -62,22 +63,21 @@ journalctl -u agent-secret-hub -f
 自定义端口：
 
 ```bash
-PORT=9000 sudo -E bash scripts/install-server.sh
+curl -fsSL https://raw.githubusercontent.com/namelesser/agent-secret-hub/main/scripts/install-server-from-github.sh | sudo env PORT=9000 bash
 ```
 
 自定义安装目录：
 
 ```bash
-INSTALL_DIR=/opt/my-secret-hub sudo -E bash scripts/install-server.sh
+curl -fsSL https://raw.githubusercontent.com/namelesser/agent-secret-hub/main/scripts/install-server-from-github.sh | sudo env INSTALL_DIR=/opt/my-secret-hub bash
 ```
 
-## 一键安装客户端 Windows
+## 一条命令安装客户端 Windows
 
-在 Windows PowerShell 里进入项目目录：
+在 Windows PowerShell 里执行：
 
 ```powershell
-cd "C:\path\to\agent-secret-hub"
-powershell -ExecutionPolicy Bypass -File .\scripts\install-client.ps1
+iwr -UseBasicParsing https://raw.githubusercontent.com/namelesser/agent-secret-hub/main/scripts/install-client-from-github.ps1 -OutFile "$env:TEMP\install-agent-secret-client.ps1"; powershell -ExecutionPolicy Bypass -File "$env:TEMP\install-agent-secret-client.ps1"
 ```
 
 安装后重新打开终端，即可使用：
@@ -89,15 +89,15 @@ agent-secret --help
 也可以安装后直接登录设备：
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\install-client.ps1 `
+iwr -UseBasicParsing https://raw.githubusercontent.com/namelesser/agent-secret-hub/main/scripts/install-client-from-github.ps1 -OutFile "$env:TEMP\install-agent-secret-client.ps1"; powershell -ExecutionPolicy Bypass -File "$env:TEMP\install-agent-secret-client.ps1" `
   -ServerUrl "http://服务器IP:8000" `
   -DeviceName "desktop-home"
 ```
 
-## 一键安装客户端 Linux / macOS
+## 一条命令安装客户端 Linux / macOS
 
 ```bash
-bash scripts/install-client.sh
+curl -fsSL https://raw.githubusercontent.com/namelesser/agent-secret-hub/main/scripts/install-client-from-github.sh | bash
 ```
 
 安装后确认 `~/.local/bin` 在 PATH 里：
@@ -109,7 +109,34 @@ agent-secret --help
 也可以安装后直接登录设备：
 
 ```bash
-SERVER_URL="http://服务器IP:8000" DEVICE_NAME="laptop" bash scripts/install-client.sh
+curl -fsSL https://raw.githubusercontent.com/namelesser/agent-secret-hub/main/scripts/install-client-from-github.sh | SERVER_URL="http://服务器IP:8000" DEVICE_NAME="laptop" bash
+```
+
+## 手动 clone 安装
+
+如果你想手动安装，也可以：
+
+```bash
+git clone https://github.com/namelesser/agent-secret-hub.git
+cd agent-secret-hub
+```
+
+服务端：
+
+```bash
+sudo bash scripts/install-server.sh
+```
+
+客户端 Windows：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\install-client.ps1
+```
+
+客户端 Linux / macOS：
+
+```bash
+bash scripts/install-client.sh
 ```
 
 ## 基本使用流程
