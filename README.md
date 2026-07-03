@@ -86,6 +86,8 @@ iwr -UseBasicParsing https://raw.githubusercontent.com/namelesser/agent-secret-h
 agent-secret --help
 ```
 
+Windows 安装脚本会把真实的 `agent-secret.exe` 加到用户 PATH 前面。重新打开 PowerShell 后，JSON 参数可以直接用单引号包起来。
+
 也可以安装后直接登录设备：
 
 ```powershell
@@ -158,19 +160,19 @@ agent-secret login --name codex-pc --server http://服务器IP:8000
 OpenAI：
 
 ```bash
-agent-secret set OPENAI --type api_key --data "{\"api_key\":\"sk-xxx\",\"base_url\":\"https://api.openai.com/v1\"}"
+agent-secret set OPENAI --type api_key --data '{"api_key":"sk-xxx","base_url":"https://api.openai.com/v1"}'
 ```
 
 GitHub：
 
 ```bash
-agent-secret set GITHUB --type token --data "{\"token\":\"ghp_xxx\"}"
+agent-secret set GITHUB --type token --data '{"token":"ghp_xxx"}'
 ```
 
 数据库：
 
 ```bash
-agent-secret set POSTGRES_MAIN --type database --data "{\"host\":\"1.2.3.4\",\"port\":5432,\"username\":\"postgres\",\"password\":\"123456\",\"database\":\"main\"}"
+agent-secret set POSTGRES_MAIN --type database --data '{"host":"1.2.3.4","port":5432,"username":"postgres","password":"123456","database":"main"}'
 ```
 
 ### 3. 授权设备读取 secret
