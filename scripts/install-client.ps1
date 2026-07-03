@@ -6,6 +6,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 $SourceDir = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
+$VenvScripts = Join-Path $SourceDir ".venv\Scripts"
 $VenvPython = Join-Path $SourceDir ".venv\Scripts\python.exe"
 $AgentSecretExe = Join-Path $SourceDir ".venv\Scripts\agent-secret.exe"
 $PyLauncher = Get-Command py -ErrorAction SilentlyContinue
@@ -41,9 +42,11 @@ exit `$LASTEXITCODE
 Set-Content -Encoding ASCII -Path $Wrapper -Value "@echo off`r`npowershell -ExecutionPolicy Bypass -File `"$PowerShellWrapper`" %*`r`n"
 
 $UserPath = [Environment]::GetEnvironmentVariable("Path", "User")
-if (($UserPath -split ";") -notcontains $InstallBin) {
-    [Environment]::SetEnvironmentVariable("Path", "$UserPath;$InstallBin", "User")
-    Write-Host "Added $InstallBin to user PATH. Reopen the terminal before using agent-secret."
+$PathParts = @($VenvScripts, $InstallBin) + (($UserPath -split ";") | Where-Object { $_ -and $_ -ne $VenvScripts -and $_ -ne $InstallBin })
+$NewUserPath = ($PathParts -join ";")
+if ($NewUserPath -ne $UserPath) {
+    [Environment]::SetEnvironmentVariable("Path", $NewUserPath, "User")
+    Write-Host "Added $VenvScripts to user PATH. Reopen the terminal before using agent-secret."
 }
 
 Write-Host "==> Client install complete"
