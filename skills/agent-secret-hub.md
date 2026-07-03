@@ -49,7 +49,7 @@ agent-secret update          # 更新客户端
 
 - CLI 路径：`~/.local/bin/agent-secret`
 - 项目目录：`~/workspace/agent-secret-hub`
-- 服务端：京东云 `http://REDACTED_IP:8000`（git clone，重启自动更新）
+- 服务端：`http://<服务器IP>:8000`（git clone，重启自动更新）
 - 当前设备：`mac-mini`
 - 配置文件：`~/.agent-secret-hub/config.json`
 
@@ -78,8 +78,8 @@ SSL_KEYFILE=/path/to/key.pem
 ## 服务端管理
 
 ```bash
-# SSH 到京东云
-sshpass -p 'REDACTED_PASSWORD' ssh root@REDACTED_IP
+# SSH 到服务端
+ssh root@<服务器IP>
 
 # 服务管理
 systemctl status agent-secret-hub

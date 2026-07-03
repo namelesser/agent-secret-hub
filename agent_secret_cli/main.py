@@ -189,7 +189,7 @@ def main() -> None:
 @app.command()
 def login(
     name: Annotated[str, typer.Option(prompt=True, help="设备名称，每台电脑取一个唯一标识，如 mac-mini、laptop-home")],
-    server: Annotated[str, typer.Option(help="服务端地址，如 http://REDACTED_IP:8000")] = DEFAULT_SERVER,
+    server: Annotated[str, typer.Option(help="服务端地址，如 http://your-server:8000")] = DEFAULT_SERVER,
     register_token: Annotated[
         str | None,
         typer.Option(
