@@ -58,21 +58,9 @@ def get_secret(name: str) -> dict[str, Any]:
 
 def list_secrets(device_id: str | None = None) -> list[dict[str, Any]]:
     with get_connection() as conn:
-        if device_id:
-            rows = conn.execute(
-                """
-                SELECT s.name, s.type, s.data
-                FROM secrets s
-                INNER JOIN device_permissions dp
-                    ON dp.secret_name = s.name AND dp.device_id = %s
-                ORDER BY s.name
-                """,
-                (device_id,),
-            ).fetchall()
-        else:
-            rows = conn.execute(
-                "SELECT name, type, data FROM secrets ORDER BY name"
-            ).fetchall()
+        rows = conn.execute(
+            "SELECT name, type, data FROM secrets ORDER BY name"
+        ).fetchall()
         return [dict(row) for row in rows]
 
 
@@ -93,14 +81,7 @@ def delete_secret(name: str) -> None:
 def list_shared_secrets(device_id: str) -> dict[str, dict[str, Any]]:
     with get_connection() as conn:
         rows = conn.execute(
-            """
-            SELECT s.name, s.data
-            FROM secrets s
-            INNER JOIN device_permissions dp
-                ON dp.secret_name = s.name AND dp.device_id = %s
-            ORDER BY s.name
-            """,
-            (device_id,),
+            "SELECT name, data FROM secrets ORDER BY name",
         ).fetchall()
         return {row["name"]: row["data"] for row in rows}
 

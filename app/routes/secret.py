@@ -11,7 +11,7 @@ from app.services.secrets import (
     update_secret,
     upsert_secret,
 )
-from app.services.permissions import device_can_read
+
 
 
 router = APIRouter(prefix="/secrets", tags=["secrets"])
@@ -41,15 +41,6 @@ def all_secrets(device: CurrentDevice) -> list[SecretResponse]:
 @router.get("/{name}", response_model=SecretResponse)
 def read_secret(name: str, request: Request, device: CurrentDevice) -> dict:
     try:
-        if not device_can_read(str(device["id"]), name):
-            record_audit(
-                device_id=str(device["id"]),
-                action="get_secret",
-                secret_name=name,
-                ip=client_ip(request),
-                success=False,
-            )
-            raise HTTPException(status_code=403, detail="Forbidden: device not authorized to read this secret")
         secret = get_secret(name)
         record_audit(
             device_id=str(device["id"]),
