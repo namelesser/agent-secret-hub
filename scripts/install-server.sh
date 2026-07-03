@@ -11,6 +11,7 @@ HOST="${HOST:-0.0.0.0}"
 PORT="${PORT:-8000}"
 BRANCH="${BRANCH:-main}"
 TARBALL_URL="${TARBALL_URL:-https://github.com/namelesser/agent-secret-hub/archive/refs/heads/${BRANCH}.tar.gz}"
+AUTO_UPDATE_TIMEOUT_SECONDS="${AUTO_UPDATE_TIMEOUT_SECONDS:-60}"
 
 if [[ "${EUID}" -ne 0 ]]; then
   echo "请用 root 运行：sudo bash scripts/install-server.sh"
@@ -101,8 +102,8 @@ Wants=network-online.target
 Type=simple
 WorkingDirectory=${INSTALL_DIR}
 EnvironmentFile=${ENV_FILE}
-ExecStartPre=/bin/bash -lc 'if [ -d .git ]; then git fetch origin ${BRANCH} && git checkout ${BRANCH} && git reset --hard origin/${BRANCH}; fi || true'
-ExecStartPre=/bin/bash -lc 'if [ ! -d .git ]; then tmp=\$(mktemp -d) && curl -fsSL "${TARBALL_URL}" | tar -xz --strip-components=1 -C "\$tmp" && rsync -a --delete --exclude .venv "\$tmp"/ ${INSTALL_DIR}/ && rm -rf "\$tmp"; fi || true'
+ExecStartPre=/bin/bash -lc 'if [ -d .git ]; then timeout ${AUTO_UPDATE_TIMEOUT_SECONDS} git fetch origin ${BRANCH} && git checkout ${BRANCH} && git reset --hard origin/${BRANCH}; fi || true'
+ExecStartPre=/bin/bash -lc 'set -o pipefail; if [ ! -d .git ]; then tmp=\$(mktemp -d) && timeout ${AUTO_UPDATE_TIMEOUT_SECONDS} curl -fsSL "${TARBALL_URL}" | tar -xz --strip-components=1 -C "\$tmp" && rsync -a --delete --exclude .venv "\$tmp"/ ${INSTALL_DIR}/ && rm -rf "\$tmp"; fi || true'
 ExecStartPre=/bin/bash -lc '${INSTALL_DIR}/.venv/bin/python -m pip install -e ${INSTALL_DIR} >/tmp/agent-secret-hub-pip.log 2>&1 || true'
 ExecStart=${INSTALL_DIR}/.venv/bin/python -m uvicorn app.main:app --host ${HOST} --port ${PORT}
 Restart=always
