@@ -32,6 +32,22 @@ agent-secret set QQ --type generic --data '{"account":"4216952","password": "***
 agent-secret set PG_LOCAL --device-only --type database --data '{"password": "***"}'
 ```
 
+### 多个同类账号命名
+
+同一服务有多个账号时，用不同 name 区分：
+
+```bash
+# 多个小米账号
+agent-secret set XIAOMI_4216952 --type generic --data '{"username":"4216952@qq.com","password": "***"}'
+agent-secret set XIAOMI_OTHER --type generic --data '{"username":"other@qq.com","password": "***"}'
+
+# 多个邮箱
+agent-secret set QQ_EMAIL_4216952 --type generic --data '{"username":"4216952@qq.com","password": "***"}'
+agent-secret set GMAIL_NAMEHZY --type generic --data '{"username":"namehzy@gmail.com","password": "***"}'
+```
+
+**命名规则**：`服务名_账号标识`，如 `XIAOMI_4216952`、`GMAIL_NAMEHZY`
+
 ## MCP Server（推荐）
 
 已注册为 Hermes MCP server，工具前缀 `mcp_agent_secret_hub_*`：
