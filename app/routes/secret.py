@@ -4,7 +4,6 @@ from app.db import get_connection
 from app.models import SecretResponse, SecretUpdateRequest, SecretUpsertRequest
 from app.services.audit import record_audit
 from app.services.auth import CurrentDevice
-from app.services.permissions import device_can_read
 from app.services.secrets import (
     delete_secret,
     get_secret,
@@ -43,16 +42,6 @@ def all_secrets() -> list[SecretResponse]:
 def read_secret(name: str, request: Request, device: CurrentDevice) -> dict:
     try:
         secret = get_secret(name)
-        if not device_can_read(str(device["id"]), name):
-            record_audit(
-                device_id=str(device["id"]),
-                action="get_secret",
-                secret_name=name,
-                ip=client_ip(request),
-                success=False,
-            )
-            raise HTTPException(status_code=403, detail="Device is not allowed")
-
         record_audit(
             device_id=str(device["id"]),
             action="get_secret",

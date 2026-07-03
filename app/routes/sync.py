@@ -3,7 +3,7 @@ from fastapi import APIRouter, Request
 from app.db import get_connection
 from app.services.audit import record_audit
 from app.services.auth import CurrentDevice
-from app.services.secrets import list_allowed_secrets
+from app.services.secrets import list_shared_secrets
 
 
 router = APIRouter(tags=["sync"])
@@ -15,7 +15,7 @@ def client_ip(request: Request) -> str | None:
 
 @router.get("/sync")
 def sync_secrets(request: Request, device: CurrentDevice) -> dict:
-    data = list_allowed_secrets(str(device["id"]))
+    data = list_shared_secrets()
     record_audit(
         device_id=str(device["id"]),
         action="sync",

@@ -8,7 +8,7 @@
 - PostgreSQL JSONB 存储
 - 多设备 device token
 - Secret CRUD API
-- 设备授权与吊销
+- 所有 active 设备共享 secret，支持设备吊销
 - Typer CLI 管理工具
 - 一键同步到 Agent `.env`
 
@@ -175,14 +175,9 @@ agent-secret set GITHUB --type token --data '{"token":"ghp_xxx"}'
 agent-secret set POSTGRES_MAIN --type database --data '{"host":"1.2.3.4","port":5432,"username":"postgres","password":"123456","database":"main"}'
 ```
 
-### 3. 授权设备读取 secret
+### 3. 所有 active 设备默认共享
 
-```bash
-agent-secret allow codex-pc OPENAI
-agent-secret allow codex-pc GITHUB
-```
-
-未授权的设备不能读取对应 secret。
+每台电脑登录后，只要设备状态是 `active`，就可以读取和同步全部 secret。不需要再逐个执行 `allow`。
 
 ### 4. 获取单个 secret
 
@@ -279,7 +274,7 @@ Content-Type: application/json
 }
 ```
 
-### 授权设备
+### 授权设备（兼容旧版本，当前共享模式不需要）
 
 ```http
 POST /device/allow
@@ -340,3 +335,5 @@ CREATE TABLE audit_logs (
   created_at TIMESTAMP DEFAULT NOW()
 );
 ```
+
+说明：`device_permissions` 是旧版逐设备授权表。当前共享模式不依赖它，保留只是为了兼容旧接口和旧数据库。
