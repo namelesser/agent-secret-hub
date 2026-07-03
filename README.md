@@ -2,17 +2,16 @@
 
 个人多电脑 Agent 凭证中心。用于统一管理 API Key、Token、账号密码、API URL、数据库连接信息，并同步生成 Hermes / OpenClaw / Codex 的 `.env` 文件。
 
-当前 MVP：
+当前功能：
 
-- FastAPI 服务端
-- PostgreSQL JSONB 存储
-- 多设备 device token
-- Secret CRUD API
-- 所有 active 设备共享 secret，支持设备吊销
-- Typer CLI 管理工具
-- 一键同步到 Agent `.env`
-
-明确不包含：加密、企业 SSO、复杂 RBAC、动态密钥系统、Kubernetes。
+- FastAPI 服务端 + PostgreSQL JSONB 存储
+- 多设备 device token 认证（所有 active 设备共享 secret）
+- Typer CLI 管理工具（中文帮助）
+- MCP Server（agent 直接调用工具管理凭证）
+- 一键同步到 Agent `.env`（merge 模式，保留手动配置）
+- 凭证导入/导出（JSON 格式）
+- 可选 HTTPS（环境变量配置）
+- 服务端重启自动更新（git pull）
 
 ## 仓库
 
@@ -22,10 +21,10 @@ https://github.com/namelesser/agent-secret-hub
 
 建议把仓库设置为 public，这样服务端和客户端都可以用一条命令安装。
 
-安装后会自动更新：
+自动更新：
 
-- 服务端：systemd 每次启动服务前自动 `git pull` 并重新安装当前包
-- 客户端：每次运行 `agent-secret` 包装命令前自动 `git pull` 并重新安装当前包
+- 服务端：systemd 每次启动前自动 `git pull`（默认开启）
+- 客户端：默认关闭，执行 `agent-secret update` 手动更新，或设置 `AGENT_SECRET_AUTO_UPDATE=1` 开启
 
 ## 一条命令安装服务端 Ubuntu
 
@@ -143,6 +142,47 @@ powershell -ExecutionPolicy Bypass -File .\scripts\install-client.ps1
 bash scripts/install-client.sh
 ```
 
+## MCP Server（Hermes Agent 集成）
+
+项目提供 MCP Server，可注册到 Hermes Agent，让 agent 直接通过工具管理凭证。
+
+### 配置
+
+在 `~/.hermes/config.yaml` 的 `mcp_servers` 下添加：
+
+```yaml
+mcp_servers:
+  agent-secret-hub:
+    enabled: true
+    command: python3
+    args:
+    - /path/to/agent-secret-hub/scripts/mcp_server.py
+```
+
+重启 Hermes 后自动发现 6 个工具：
+
+| 工具 | 说明 |
+|------|------|
+| `mcp_agent_secret_hub_list` | 列出所有凭证 |
+| `mcp_agent_secret_hub_get` | 获取凭证详情 |
+| `mcp_agent_secret_hub_set` | 创建/更新凭证 |
+| `mcp_agent_secret_hub_delete` | 删除凭证 |
+| `mcp_agent_secret_hub_devices` | 列出设备 |
+| `mcp_agent_secret_hub_audit` | 审计日志 |
+
+验证连接：`hermes mcp test agent-secret-hub`
+
+## HTTPS（可选）
+
+在 `/etc/agent-secret-hub.env` 中设置证书路径即可启用：
+
+```bash
+SSL_CERTFILE=/etc/letsencrypt/live/your.domain/fullchain.pem
+SSL_KEYFILE=/etc/letsencrypt/live/your.domain/privkey.pem
+```
+
+不设置则默认 HTTP，证书文件不存在时自动回退 HTTP。
+
 ## 基本使用流程
 
 ### 1. 每台电脑登录一次
@@ -183,11 +223,30 @@ agent-secret set POSTGRES_MAIN --type database --data '{"host":"1.2.3.4","port":
 
 每台电脑登录后，只要设备状态是 `active`，就可以读取和同步全部 secret。不需要再逐个执行 `allow`。
 
-### 4. 获取单个 secret
+### 4. 列出和获取 secret
 
 ```bash
+# 列出所有已授权凭证
+agent-secret list
+
+# 获取单个凭证
 agent-secret get OPENAI
+```')
+print("✓ 添加 list 命令说明")
+
+# 5. 添加导入导出说明
+patch(readme,
+### 6. 导入导出
+
+```bash
+# 导出所有凭证为 JSON
+agent-secret export -o backup.json
+
+# 从 JSON 导入
+agent-secret import backup.json
 ```
+
+### 7. 查看设备和审计日志
 
 ### 5. 同步到 Agent `.env`
 
@@ -228,7 +287,7 @@ agent-secret devices
 agent-secret audit
 ```
 
-### 7. 吊销设备
+### 8. 吊销设备
 
 ```bash
 agent-secret revoke laptop
