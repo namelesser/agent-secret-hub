@@ -13,8 +13,8 @@ dependencies = [
 ]
 
 [project.scripts]
-agent-secret = "cli.main:app"
+agent-secret = "agent_secret_cli.main:app"
 
 [tool.setuptools]
-packages = ["app", "app.routes", "app.services", "app.utils", "cli"]
+packages = ["app", "app.routes", "app.services", "app.utils", "agent_secret_cli"]
 
