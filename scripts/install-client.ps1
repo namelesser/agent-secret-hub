@@ -11,13 +11,13 @@ $AgentSecretExe = Join-Path $SourceDir ".venv\Scripts\agent-secret.exe"
 $PyLauncher = Get-Command py -ErrorAction SilentlyContinue
 $Python = Get-Command python -ErrorAction SilentlyContinue
 
-Write-Host "==> 安装客户端依赖"
+Write-Host "==> Install client dependencies"
 if ($PyLauncher) {
     & $PyLauncher.Source -3 -m venv (Join-Path $SourceDir ".venv")
 } elseif ($Python) {
     & $Python.Source -m venv (Join-Path $SourceDir ".venv")
 } else {
-    throw "未找到 Python。请先安装 Python 3.10+。"
+    throw "Python not found. Install Python 3.10+ first."
 }
 & $VenvPython -m pip install --upgrade pip
 & $VenvPython -m pip install -e $SourceDir
@@ -43,14 +43,14 @@ Set-Content -Encoding ASCII -Path $Wrapper -Value "@echo off`r`npowershell -Exec
 $UserPath = [Environment]::GetEnvironmentVariable("Path", "User")
 if (($UserPath -split ";") -notcontains $InstallBin) {
     [Environment]::SetEnvironmentVariable("Path", "$UserPath;$InstallBin", "User")
-    Write-Host "已把 $InstallBin 加入用户 PATH。请重新打开终端后使用 agent-secret。"
+    Write-Host "Added $InstallBin to user PATH. Reopen the terminal before using agent-secret."
 }
 
-Write-Host "==> 客户端安装完成"
-Write-Host "命令位置：$Wrapper"
+Write-Host "==> Client install complete"
+Write-Host "Command path: $Wrapper"
 
 if ($ServerUrl -and $DeviceName) {
     & $AgentSecretExe login --name $DeviceName --server $ServerUrl
 } else {
-    Write-Host "登录示例：agent-secret login --name my-laptop --server http://服务器IP:8000"
+    Write-Host "Login example: agent-secret login --name my-laptop --server http://SERVER_IP:8000"
 }
