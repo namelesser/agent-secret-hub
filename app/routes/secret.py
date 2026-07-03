@@ -34,8 +34,8 @@ def create_secret(payload: SecretUpsertRequest, request: Request, device: Curren
 
 
 @router.get("")
-+def all_secrets(device: CurrentDevice) -> list[SecretResponse]:
-+    return list_secrets(str(device["id"]))
+def all_secrets(device: CurrentDevice) -> list[SecretResponse]:
+    return list_secrets(str(device["id"]))
 
 
 @router.get("/{name}", response_model=SecretResponse)
