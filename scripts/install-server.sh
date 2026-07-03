@@ -45,21 +45,17 @@ print(secrets.token_urlsafe(32))
 PY
 )}"
 
+REPO_URL="https://github.com/namelesser/agent-secret-hub.git"
+
 echo "==> 准备应用目录：${INSTALL_DIR}"
-mkdir -p "${INSTALL_DIR}"
-SOURCE_REAL="$(cd "${SOURCE_DIR}" && pwd -P)"
-INSTALL_REAL="$(cd "${INSTALL_DIR}" && pwd -P)"
-if [[ "${SOURCE_REAL}" != "${INSTALL_REAL}" ]]; then
-  rm -rf "${INSTALL_DIR}"
-  mkdir -p "${INSTALL_DIR}"
-  tar \
-    --exclude ".git" \
-    --exclude ".venv" \
-    --exclude "__pycache__" \
-    -C "${SOURCE_DIR}" \
-    -cf - . | tar -C "${INSTALL_DIR}" -xf -
+if [[ -d "${INSTALL_DIR}/.git" ]]; then
+  echo "已有 git 仓库，拉取最新代码..."
+  git -C "${INSTALL_DIR}" fetch origin "${BRANCH}" || true
+  git -C "${INSTALL_DIR}" checkout "${BRANCH}" || true
+  git -C "${INSTALL_DIR}" reset --hard "origin/${BRANCH}" || true
 else
-  echo "当前源码目录就是安装目录，跳过复制。"
+  rm -rf "${INSTALL_DIR}"
+  git clone -b "${BRANCH}" "${REPO_URL}" "${INSTALL_DIR}"
 fi
 
 echo "==> 初始化 PostgreSQL"
@@ -111,9 +107,8 @@ Wants=network-online.target
 Type=simple
 WorkingDirectory=${INSTALL_DIR}
 EnvironmentFile=${ENV_FILE}
-ExecStartPre=/bin/bash -lc 'if [ -d .git ]; then timeout ${AUTO_UPDATE_TIMEOUT_SECONDS} git fetch origin ${BRANCH} && git checkout ${BRANCH} && git reset --hard origin/${BRANCH}; fi || true'
-ExecStartPre=/bin/bash -lc 'set -o pipefail; if [ ! -d .git ]; then tmp=\$(mktemp -d) && timeout ${AUTO_UPDATE_TIMEOUT_SECONDS} curl -fsSL "${TARBALL_URL}" | tar -xz --strip-components=1 -C "\$tmp" && rsync -a --delete --exclude .venv "\$tmp"/ ${INSTALL_DIR}/ && rm -rf "\$tmp"; fi || true'
-ExecStartPre=/bin/bash -lc '${INSTALL_DIR}/.venv/bin/python -m pip install -e ${INSTALL_DIR} >/tmp/agent-secret-hub-pip.log 2>&1 || true'
+ExecStartPre=/bin/bash -lc 'timeout ${AUTO_UPDATE_TIMEOUT_SECONDS} git fetch origin ${BRANCH} && git checkout ${BRANCH} && git reset --hard origin/${BRANCH} || true'
+ExecStartPre=/bin/bash -lc '${INSTALL_DIR}/.venv/bin/python -m pip install -e ${INSTALL_DIR} >/tmp/agent-secret-hub-pip.log 2>&1 || true' 
 ExecStart=/bin/bash ${INSTALL_DIR}/scripts/start.sh
 Restart=always
 RestartSec=3
