@@ -11,7 +11,12 @@ import httpx
 import typer
 
 
-app = typer.Typer(help="Agent Secret Hub CLI")
+app = typer.Typer(
+    help="个人多设备 Agent 凭证管理工具\n\n"
+    "统一管理 API Key、Token、账号密码、数据库连接等敏感信息，\n"
+    "按设备授权读取权限，一键同步到 Hermes / OpenClaw / Codex 的 .env 文件。\n\n"
+    "基本流程：login → set → allow → sync"
+)
 
 DEFAULT_SERVER = os.getenv("AGENT_SECRET_SERVER", "http://127.0.0.1:8000")
 CONFIG_PATH = Path(
@@ -160,14 +165,14 @@ def main() -> None:
 
 @app.command()
 def login(
-    name: Annotated[str, typer.Option(prompt=True, help="Device name")],
-    server: Annotated[str, typer.Option(help="Agent Secret Hub server URL")] = DEFAULT_SERVER,
+    name: Annotated[str, typer.Option(prompt=True, help="设备名称，每台电脑取一个唯一标识，如 mac-mini、laptop-home")],
+    server: Annotated[str, typer.Option(help="服务端地址，如 http://REDACTED_IP:8000")] = DEFAULT_SERVER,
     register_token: Annotated[
         str | None,
         typer.Option(
             "--register-token",
             envvar="AGENT_SECRET_REGISTER_TOKEN",
-            help="Token required by the server to register a new device",
+            help="设备注册口令，从服务端 /etc/agent-secret-hub.env 获取。服务端设置了 REGISTER_TOKEN 时必填",
         ),
     ] = None,
 ) -> None:
@@ -200,9 +205,9 @@ def login(
 
 @app.command("set")
 def set_secret(
-    name: Annotated[str, typer.Argument(help="Secret name, for example OPENAI")],
-    data: Annotated[str, typer.Option("--data", help="JSON object payload")],
-    secret_type: Annotated[str, typer.Option("--type", help="Secret type")] = "generic",
+    name: Annotated[str, typer.Argument(help="凭证名称，如 OPENAI、GITHUB、PG_MAIN。建议大写下划线分隔")],
+    data: Annotated[str, typer.Option("--data", help='JSON 格式的凭证数据，如 \'{"api_key":"sk-xxx"}\'')],
+    secret_type: Annotated[str, typer.Option("--type", help="凭证类型：api_key / token / database / generic")] = "generic",
 ) -> None:
     payload = {"name": name, "type": secret_type, "data": parse_json_object(data)}
     request("POST", "/secrets", json=payload)
@@ -211,7 +216,7 @@ def set_secret(
 
 @app.command("get")
 def get_secret(
-    name: Annotated[str, typer.Argument(help="Secret name")],
+    name: Annotated[str, typer.Argument(help="凭证名称，如 OPENAI")],
 ) -> None:
     response = request("GET", f"/secrets/{name}", headers=auth_headers())
     typer.echo(json.dumps(response.json(), indent=2, ensure_ascii=False))
@@ -219,9 +224,9 @@ def get_secret(
 
 @app.command()
 def allow(
-    device: Annotated[str, typer.Argument(help="Device name")],
-    secret: Annotated[str, typer.Argument(help="Secret name")],
-    permission: Annotated[str, typer.Option("--permission")] = "read",
+    device: Annotated[str, typer.Argument(help="设备名称，如 mac-mini")],
+    secret: Annotated[str, typer.Argument(help="凭证名称，如 OPENAI")],
+    permission: Annotated[str, typer.Option("--permission", help="权限类型，默认 read")] = "read",
 ) -> None:
     request(
         "POST",
@@ -233,7 +238,7 @@ def allow(
 
 @app.command()
 def revoke(
-    device: Annotated[str, typer.Argument(help="Device name")],
+    device: Annotated[str, typer.Argument(help="要吊销的设备名称，吊销后该设备无法再读取任何凭证")],
 ) -> None:
     request("POST", "/device/revoke", json={"device": device})
     typer.echo(f"Revoked {device}")
@@ -243,7 +248,7 @@ def revoke(
 def sync(
     target: Annotated[
         str,
-        typer.Argument(help="all, hermes, openclaw, or codex"),
+        typer.Argument(help="同步目标：all（全部）/ hermes / openclaw / codex"),
     ] = "all",
 ) -> None:
     response = request("GET", "/sync", headers=auth_headers())
@@ -258,7 +263,7 @@ def sync(
 
 
 @app.command()
-def audit(limit: Annotated[int, typer.Option("--limit")] = 100) -> None:
+def audit(limit: Annotated[int, typer.Option("--limit", help="显示条数，默认 100")] = 100) -> None:
     response = request("GET", f"/audit?limit={limit}")
     typer.echo(json.dumps(response.json(), indent=2, ensure_ascii=False))
 
@@ -267,6 +272,32 @@ def audit(limit: Annotated[int, typer.Option("--limit")] = 100) -> None:
 def devices() -> None:
     response = request("GET", "/device")
     typer.echo(json.dumps(response.json(), indent=2, ensure_ascii=False))
+
+
+@app.command()
+def update() -> None:
+    """更新客户端到最新版本"""
+    repo = Path(__file__).resolve().parents[1]
+    if not (repo / ".git").exists():
+        typer.echo("错误：非 git 仓库，无法更新", err=True)
+        raise typer.Exit(1)
+    
+    typer.echo("正在更新客户端...")
+    commands = [
+        ["git", "-C", str(repo), "fetch", "origin", "main"],
+        ["git", "-C", str(repo), "checkout", "main"],
+        ["git", "-C", str(repo), "reset", "--hard", "origin/main"],
+        [sys.executable, "-m", "pip", "install", "-e", str(repo)],
+    ]
+    
+    for cmd in commands:
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+        if result.returncode != 0:
+            typer.echo(f"更新失败：{result.stderr}", err=True)
+            raise typer.Exit(1)
+    
+    typer.echo("✓ 客户端已更新到最新版本")
+
 
 
 if __name__ == "__main__":
