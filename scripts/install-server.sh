@@ -87,8 +87,11 @@ GRANT ALL PRIVILEGES ON DATABASE ${DB_NAME} TO ${DB_USER};
 SQL
 
 cat > "${ENV_FILE}" <<EOF
-DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@127.0.0.1:5432/${DB_NAME}
+DATABASE_URL=postgresql://${DB_USER}:***@127.0.0.1:5432/${DB_NAME}
 REGISTER_TOKEN=${REGISTER_TOKEN}
+# HTTPS（可选）：取消注释并填入证书路径即可启用
+#SSL_CERTFILE=/etc/letsencrypt/live/your.domain/fullchain.pem
+#SSL_KEYFILE=/etc/letsencrypt/live/your.domain/privkey.pem
 EOF
 chmod 600 "${ENV_FILE}"
 
@@ -111,7 +114,7 @@ EnvironmentFile=${ENV_FILE}
 ExecStartPre=/bin/bash -lc 'if [ -d .git ]; then timeout ${AUTO_UPDATE_TIMEOUT_SECONDS} git fetch origin ${BRANCH} && git checkout ${BRANCH} && git reset --hard origin/${BRANCH}; fi || true'
 ExecStartPre=/bin/bash -lc 'set -o pipefail; if [ ! -d .git ]; then tmp=\$(mktemp -d) && timeout ${AUTO_UPDATE_TIMEOUT_SECONDS} curl -fsSL "${TARBALL_URL}" | tar -xz --strip-components=1 -C "\$tmp" && rsync -a --delete --exclude .venv "\$tmp"/ ${INSTALL_DIR}/ && rm -rf "\$tmp"; fi || true'
 ExecStartPre=/bin/bash -lc '${INSTALL_DIR}/.venv/bin/python -m pip install -e ${INSTALL_DIR} >/tmp/agent-secret-hub-pip.log 2>&1 || true'
-ExecStart=${INSTALL_DIR}/.venv/bin/python -m uvicorn app.main:app --host ${HOST} --port ${PORT}
+ExecStart=/bin/bash ${INSTALL_DIR}/scripts/start.sh
 Restart=always
 RestartSec=3
 
