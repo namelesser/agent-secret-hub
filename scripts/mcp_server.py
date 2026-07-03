@@ -68,6 +68,7 @@ async def list_tools() -> list[Tool]:
                     "name": {"type": "string", "description": "凭证名称"},
                     "type": {"type": "string", "description": "凭证类型：api_key / token / database / generic", "default": "generic"},
                     "data": {"type": "object", "description": "凭证数据 JSON"},
+                    "device_only": {"type": "boolean", "description": "仅本设备专用，默认 false（通用）", "default": False},
                 },
                 "required": ["name", "data"],
             },
@@ -115,6 +116,7 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
                 "name": arguments["name"],
                 "type": arguments.get("type", "generic"),
                 "data": arguments["data"],
+                "device_only": arguments.get("device_only", False),
             }
             data = api("POST", "/secrets", json=payload)
             result = f"已保存：{data['name']}"

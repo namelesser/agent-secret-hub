@@ -50,11 +50,13 @@ def init_db() -> None:
             """
             CREATE TABLE IF NOT EXISTS secrets (
               id UUID PRIMARY KEY,
-              name TEXT UNIQUE NOT NULL,
+              name TEXT NOT NULL,
+              device_name TEXT,
               type TEXT NOT NULL,
               data JSONB NOT NULL,
               created_at TIMESTAMP DEFAULT NOW(),
-              updated_at TIMESTAMP DEFAULT NOW()
+              updated_at TIMESTAMP DEFAULT NOW(),
+              UNIQUE(name, device_name)
             );
             """
         )

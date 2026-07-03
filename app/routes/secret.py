@@ -22,7 +22,8 @@ from app.utils.client_ip import client_ip
 
 @router.post("", response_model=SecretResponse)
 def create_secret(payload: SecretUpsertRequest, request: Request, device: CurrentDevice) -> dict:
-    secret = upsert_secret(payload.name, payload.type, payload.data)
+    device_name = str(device["name"]) if payload.device_only else None
+    secret = upsert_secret(payload.name, payload.type, payload.data, device_name=device_name)
     record_audit(
         device_id=str(device["id"]),
         action="set_secret",
@@ -35,13 +36,13 @@ def create_secret(payload: SecretUpsertRequest, request: Request, device: Curren
 
 @router.get("")
 def all_secrets(device: CurrentDevice) -> list[SecretResponse]:
-    return list_secrets(str(device["id"]))
+    return list_secrets(device_name=str(device["name"]))
 
 
 @router.get("/{name}", response_model=SecretResponse)
 def read_secret(name: str, request: Request, device: CurrentDevice) -> dict:
     try:
-        secret = get_secret(name)
+        secret = get_secret(name, device_name=str(device["name"]))
         record_audit(
             device_id=str(device["id"]),
             action="get_secret",

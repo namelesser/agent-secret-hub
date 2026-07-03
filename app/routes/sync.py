@@ -14,7 +14,7 @@ from app.utils.client_ip import client_ip
 
 @router.get("/sync")
 def sync_secrets(request: Request, device: CurrentDevice) -> dict:
-    data = list_shared_secrets(str(device["id"]))
+    data = list_shared_secrets(str(device["id"]), device_name=str(device["name"]))
     record_audit(
         device_id=str(device["id"]),
         action="sync",

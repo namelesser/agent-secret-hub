@@ -231,8 +231,9 @@ def set_secret(
     name: Annotated[str, typer.Argument(help="凭证名称，如 OPENAI、GITHUB、PG_MAIN。建议大写下划线分隔")],
     data: Annotated[str, typer.Option("--data", help='JSON 格式的凭证数据，如 \'{"api_key":"sk-xxx"}\'')],
     secret_type: Annotated[str, typer.Option("--type", help="凭证类型：api_key / token / database / generic")] = "generic",
+    device_only: Annotated[bool, typer.Option("--device-only", help="仅本设备专用（不与其他设备共享）")] = False,
 ) -> None:
-    payload = {"name": name, "type": secret_type, "data": parse_json_object(data)}
+    payload = {"name": name, "type": secret_type, "data": parse_json_object(data), "device_only": device_only}
     request("POST", "/secrets", json=payload, headers=auth_headers())
     typer.echo(f"Saved secret {name}")
 

@@ -25,6 +25,7 @@ class SecretUpsertRequest(BaseModel):
     name: str = Field(min_length=1)
     type: str = Field(default="generic", min_length=1)
     data: dict[str, Any]
+    device_only: bool = False
 
 
 class SecretUpdateRequest(BaseModel):
