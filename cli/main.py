@@ -247,8 +247,7 @@ def list_secrets() -> None:
         return
     for s in secrets:
         typer.echo(f"  {s['name']:30s}  ({s['type']})")
-    typer.echo(f"
-共 {len(secrets)} 条凭证")
+    typer.echo(f"\n共 {len(secrets)} 条凭证")
 
 
 @app.command("get")
@@ -345,8 +344,7 @@ def import_secrets(
         request("POST", "/secrets", json={"name": s["name"], "type": s.get("type", "generic"), "data": s["data"]}, headers=auth_headers())
         count += 1
         typer.echo(f"  导入 {s['name']}")
-    typer.echo(f"
-共导入 {count} 条凭证")
+    typer.echo(f"\n共导入 {count} 条凭证")
 
 
 @app.command()
