@@ -13,7 +13,7 @@ trigger:
   - 查 key
 ---
 
-# Agent Secret 自动凭证管理
+# Agent Secret 自动凭证管理 (v0.2.0)
 
 与 agent-secret-hub MCP Server 配合，实现凭证自动保存和查询。
 
@@ -103,5 +103,7 @@ agent-secret set <NAME> --type <TYPE> --data '<JSON>'
 
 - name 命名要有意义，方便后续查询（如 `JD_SSH` 而不是 `MYPASSWORD`）
 - 同名凭证会自动更新（不会重复保存）
+- **跨设备同名覆盖**：如果多台设备存同名但不同值的凭证，后存的覆盖先存的。密码不同时用不同 name（如 `PG_MAC`、`PG_WIN`）
 - 保存后简短告知用户即可，不需要长篇解释
 - 敏感信息不要写入记忆/日志，只存 agent-secret-hub
+- 替代旧的 `creds.sh` + PostgreSQL `credentials` 表方案

@@ -10,7 +10,7 @@ trigger:
   - 凭证查询
 ---
 
-# Agent Secret Hub
+# Agent Secret Hub (v0.2.0)
 
 个人多电脑 Agent 凭证中心。统一管理 API Key、Token、账号密码、数据库连接，一键同步到 `.env`。
 

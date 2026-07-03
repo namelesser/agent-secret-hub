@@ -1,6 +1,6 @@
 [project]
 name = "agent-secret-hub"
-version = "0.1.0"
+version = "0.2.0"
 description = "Personal multi-device Agent Secret Hub"
 requires-python = ">=3.10"
 dependencies = [
