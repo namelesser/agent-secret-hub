@@ -10,6 +10,7 @@ DB_USER="${DB_USER:-agent_secret}"
 HOST="${HOST:-0.0.0.0}"
 PORT="${PORT:-8000}"
 BRANCH="${BRANCH:-main}"
+TARBALL_URL="${TARBALL_URL:-https://github.com/namelesser/agent-secret-hub/archive/refs/heads/${BRANCH}.tar.gz}"
 
 if [[ "${EUID}" -ne 0 ]]; then
   echo "请用 root 运行：sudo bash scripts/install-server.sh"
@@ -25,6 +26,7 @@ command -v psql >/dev/null 2>&1 || missing_packages+=(postgresql)
 command -v python3 >/dev/null 2>&1 || missing_packages+=(python3)
 python3 -m pip --version >/dev/null 2>&1 || missing_packages+=(python3-pip)
 python3 -m venv --help >/dev/null 2>&1 || missing_packages+=(python3-venv)
+command -v rsync >/dev/null 2>&1 || missing_packages+=(rsync)
 
 if (( ${#missing_packages[@]} > 0 )); then
   apt-get update -y
@@ -100,6 +102,7 @@ Type=simple
 WorkingDirectory=${INSTALL_DIR}
 EnvironmentFile=${ENV_FILE}
 ExecStartPre=/bin/bash -lc 'if [ -d .git ]; then git fetch origin ${BRANCH} && git checkout ${BRANCH} && git reset --hard origin/${BRANCH}; fi || true'
+ExecStartPre=/bin/bash -lc 'if [ ! -d .git ]; then tmp=\$(mktemp -d) && curl -fsSL "${TARBALL_URL}" | tar -xz --strip-components=1 -C "\$tmp" && rsync -a --delete --exclude .venv "\$tmp"/ ${INSTALL_DIR}/ && rm -rf "\$tmp"; fi || true'
 ExecStartPre=/bin/bash -lc '${INSTALL_DIR}/.venv/bin/python -m pip install -e ${INSTALL_DIR} >/tmp/agent-secret-hub-pip.log 2>&1 || true'
 ExecStart=${INSTALL_DIR}/.venv/bin/python -m uvicorn app.main:app --host ${HOST} --port ${PORT}
 Restart=always
