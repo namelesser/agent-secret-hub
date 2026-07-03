@@ -11,6 +11,7 @@ from app.services.secrets import (
     update_secret,
     upsert_secret,
 )
+from app.services.permissions import device_can_read
 
 
 router = APIRouter(prefix="/secrets", tags=["secrets"])
@@ -21,10 +22,10 @@ def client_ip(request: Request) -> str | None:
 
 
 @router.post("", response_model=SecretResponse)
-def create_secret(payload: SecretUpsertRequest, request: Request) -> dict:
+def create_secret(payload: SecretUpsertRequest, request: Request, device: CurrentDevice) -> dict:
     secret = upsert_secret(payload.name, payload.type, payload.data)
     record_audit(
-        device_id=None,
+        device_id=str(device["id"]),
         action="set_secret",
         secret_name=payload.name,
         ip=client_ip(request),
@@ -41,6 +42,15 @@ def all_secrets() -> list[SecretResponse]:
 @router.get("/{name}", response_model=SecretResponse)
 def read_secret(name: str, request: Request, device: CurrentDevice) -> dict:
     try:
+        if not device_can_read(str(device["id"]), name):
+            record_audit(
+                device_id=str(device["id"]),
+                action="get_secret",
+                secret_name=name,
+                ip=client_ip(request),
+                success=False,
+            )
+            raise HTTPException(status_code=403, detail="Forbidden: device not authorized to read this secret")
         secret = get_secret(name)
         record_audit(
             device_id=str(device["id"]),
@@ -76,10 +86,10 @@ def edit_secret(name: str, payload: SecretUpdateRequest, request: Request) -> di
 
 
 @router.delete("/{name}")
-def remove_secret(name: str, request: Request) -> dict[str, str]:
+def remove_secret(name: str, request: Request, device: CurrentDevice) -> dict[str, str]:
     delete_secret(name)
     record_audit(
-        device_id=None,
+        device_id=str(device["id"]),
         action="delete_secret",
         secret_name=name,
         ip=client_ip(request),

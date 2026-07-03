@@ -11,6 +11,7 @@ from app.models import (
     DeviceRegisterResponse,
     RevokeDeviceRequest,
 )
+from app.services.auth import CurrentDevice
 from app.services.audit import record_audit
 from app.services.permissions import allow_device, revoke_device
 
@@ -60,7 +61,7 @@ def register_device(payload: DeviceRegisterRequest, request: Request) -> dict[st
 
 
 @router.get("")
-def list_devices() -> list[dict[str, str | None]]:
+def list_devices(device: CurrentDevice) -> list[dict[str, str | None]]:
     with get_connection() as conn:
         rows = conn.execute(
             """
@@ -84,10 +85,10 @@ def list_devices() -> list[dict[str, str | None]]:
 
 
 @router.post("/allow")
-def allow(payload: AllowDeviceRequest, request: Request) -> dict[str, str]:
+def allow(payload: AllowDeviceRequest, request: Request, device: CurrentDevice) -> dict[str, str]:
     allow_device(payload.device, payload.secret, payload.permission)
     record_audit(
-        device_id=None,
+        device_id=str(device["id"]),
         action="allow_device",
         secret_name=payload.secret,
         ip=client_ip(request),
@@ -97,10 +98,10 @@ def allow(payload: AllowDeviceRequest, request: Request) -> dict[str, str]:
 
 
 @router.post("/revoke")
-def revoke(payload: RevokeDeviceRequest, request: Request) -> dict[str, str]:
+def revoke(payload: RevokeDeviceRequest, request: Request, device: CurrentDevice) -> dict[str, str]:
     revoke_device(payload.device)
     record_audit(
-        device_id=None,
+        device_id=str(device["id"]),
         action="revoke_device",
         ip=client_ip(request),
         success=True,

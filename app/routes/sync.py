@@ -15,7 +15,7 @@ def client_ip(request: Request) -> str | None:
 
 @router.get("/sync")
 def sync_secrets(request: Request, device: CurrentDevice) -> dict:
-    data = list_shared_secrets()
+    data = list_shared_secrets(str(device["id"]))
     record_audit(
         device_id=str(device["id"]),
         action="sync",
@@ -26,7 +26,7 @@ def sync_secrets(request: Request, device: CurrentDevice) -> dict:
 
 
 @router.get("/audit")
-def audit_logs(limit: int = 100) -> list[dict]:
+def audit_logs(device: CurrentDevice, limit: int = 100) -> list[dict]:
     limit = max(1, min(limit, 500))
     with get_connection() as conn:
         rows = conn.execute(

@@ -210,7 +210,7 @@ def set_secret(
     secret_type: Annotated[str, typer.Option("--type", help="凭证类型：api_key / token / database / generic")] = "generic",
 ) -> None:
     payload = {"name": name, "type": secret_type, "data": parse_json_object(data)}
-    request("POST", "/secrets", json=payload)
+    request("POST", "/secrets", json=payload, headers=auth_headers())
     typer.echo(f"Saved secret {name}")
 
 
@@ -232,6 +232,7 @@ def allow(
         "POST",
         "/device/allow",
         json={"device": device, "secret": secret, "permission": permission},
+        headers=auth_headers(),
     )
     typer.echo(f"Allowed {device} -> {secret} ({permission})")
 
@@ -240,7 +241,7 @@ def allow(
 def revoke(
     device: Annotated[str, typer.Argument(help="要吊销的设备名称，吊销后该设备无法再读取任何凭证")],
 ) -> None:
-    request("POST", "/device/revoke", json={"device": device})
+    request("POST", "/device/revoke", json={"device": device}, headers=auth_headers())
     typer.echo(f"Revoked {device}")
 
 
@@ -264,13 +265,13 @@ def sync(
 
 @app.command()
 def audit(limit: Annotated[int, typer.Option("--limit", help="显示条数，默认 100")] = 100) -> None:
-    response = request("GET", f"/audit?limit={limit}")
+    response = request("GET", f"/audit?limit={limit}", headers=auth_headers())
     typer.echo(json.dumps(response.json(), indent=2, ensure_ascii=False))
 
 
 @app.command()
 def devices() -> None:
-    response = request("GET", "/device")
+    response = request("GET", "/device", headers=auth_headers())
     typer.echo(json.dumps(response.json(), indent=2, ensure_ascii=False))
 
 

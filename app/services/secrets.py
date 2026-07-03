@@ -78,18 +78,21 @@ def delete_secret(name: str) -> None:
             raise HTTPException(status_code=404, detail="Secret not found")
 
 
-def list_shared_secrets() -> dict[str, dict[str, Any]]:
+def list_shared_secrets(device_id: str) -> dict[str, dict[str, Any]]:
     with get_connection() as conn:
         rows = conn.execute(
             """
             SELECT s.name, s.data
             FROM secrets s
+            INNER JOIN device_permissions dp
+                ON dp.secret_name = s.name AND dp.device_id = %s
             ORDER BY s.name
             """,
+            (device_id,),
         ).fetchall()
         return {row["name"]: row["data"] for row in rows}
 
 
 def list_allowed_secrets(device_id: str) -> dict[str, dict[str, Any]]:
-    return list_shared_secrets()
+    return list_shared_secrets(device_id)
 
