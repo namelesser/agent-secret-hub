@@ -123,7 +123,7 @@ def auto_update_client() -> None:
         return
     AUTO_UPDATE_DONE = True
 
-    if os.getenv("AGENT_SECRET_AUTO_UPDATE", "1").lower() in {"0", "false", "no"}:
+    if os.getenv("AGENT_SECRET_AUTO_UPDATE", "0").lower() in {"0", "false", "no"}:
         return
 
     repo = Path(__file__).resolve().parents[1]
