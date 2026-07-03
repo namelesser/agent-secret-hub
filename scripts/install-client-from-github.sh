@@ -29,5 +29,5 @@ else
 fi
 
 echo "==> 执行客户端安装"
-bash "${INSTALL_DIR}/scripts/install-client.sh"
+SERVER_URL="${SERVER_URL:-}" DEVICE_NAME="${DEVICE_NAME:-}" REGISTER_TOKEN="${REGISTER_TOKEN:-}" bash "${INSTALL_DIR}/scripts/install-client.sh"
 

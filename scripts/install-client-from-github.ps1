@@ -3,7 +3,8 @@ param(
     [string]$Branch = "main",
     [string]$InstallDir = "$env:USERPROFILE\.agent-secret-hub\app",
     [string]$ServerUrl = "",
-    [string]$DeviceName = ""
+    [string]$DeviceName = "",
+    [string]$RegisterToken = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -26,4 +27,4 @@ if (Test-Path (Join-Path $InstallDir ".git")) {
 
 Write-Host "==> Run client installer"
 $script = Join-Path $InstallDir "scripts\install-client.ps1"
-& powershell -ExecutionPolicy Bypass -File $script -ServerUrl $ServerUrl -DeviceName $DeviceName
+& powershell -ExecutionPolicy Bypass -File $script -ServerUrl $ServerUrl -DeviceName $DeviceName -RegisterToken $RegisterToken

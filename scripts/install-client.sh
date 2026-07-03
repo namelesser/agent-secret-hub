@@ -4,6 +4,7 @@ set -euo pipefail
 INSTALL_BIN="${INSTALL_BIN:-${HOME}/.local/bin}"
 SERVER_URL="${SERVER_URL:-}"
 DEVICE_NAME="${DEVICE_NAME:-}"
+REGISTER_TOKEN="${REGISTER_TOKEN:-}"
 SOURCE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 echo "==> 安装客户端依赖"
@@ -36,7 +37,11 @@ case ":${PATH}:" in
 esac
 
 if [[ -n "${SERVER_URL}" && -n "${DEVICE_NAME}" ]]; then
-  "${INSTALL_BIN}/agent-secret" login --name "${DEVICE_NAME}" --server "${SERVER_URL}"
+  login_args=(login --name "${DEVICE_NAME}" --server "${SERVER_URL}")
+  if [[ -n "${REGISTER_TOKEN}" ]]; then
+    login_args+=(--register-token "${REGISTER_TOKEN}")
+  fi
+  "${INSTALL_BIN}/agent-secret" "${login_args[@]}"
 else
-  echo "登录示例：agent-secret login --name my-laptop --server http://服务器IP:8000"
+  echo "登录示例：agent-secret login --name my-laptop --server http://服务器IP:8000 --register-token REGISTER_TOKEN"
 fi

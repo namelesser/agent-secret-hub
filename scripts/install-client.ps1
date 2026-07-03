@@ -1,6 +1,7 @@
 param(
     [string]$ServerUrl = "",
     [string]$DeviceName = "",
+    [string]$RegisterToken = "",
     [string]$InstallBin = "$env:LOCALAPPDATA\AgentSecretHub\bin"
 )
 
@@ -53,7 +54,11 @@ Write-Host "==> Client install complete"
 Write-Host "Command path: $Wrapper"
 
 if ($ServerUrl -and $DeviceName) {
-    & $AgentSecretExe login --name $DeviceName --server $ServerUrl
+    $LoginArgs = @("login", "--name", $DeviceName, "--server", $ServerUrl)
+    if ($RegisterToken) {
+        $LoginArgs += @("--register-token", $RegisterToken)
+    }
+    & $AgentSecretExe @LoginArgs
 } else {
-    Write-Host "Login example: agent-secret login --name my-laptop --server http://SERVER_IP:8000"
+    Write-Host "Login example: agent-secret login --name my-laptop --server http://SERVER_IP:8000 --register-token REGISTER_TOKEN"
 }

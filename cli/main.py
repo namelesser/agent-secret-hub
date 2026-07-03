@@ -162,10 +162,22 @@ def main() -> None:
 def login(
     name: Annotated[str, typer.Option(prompt=True, help="Device name")],
     server: Annotated[str, typer.Option(help="Agent Secret Hub server URL")] = DEFAULT_SERVER,
+    register_token: Annotated[
+        str | None,
+        typer.Option(
+            "--register-token",
+            envvar="AGENT_SECRET_REGISTER_TOKEN",
+            help="Token required by the server to register a new device",
+        ),
+    ] = None,
 ) -> None:
+    payload: dict[str, str] = {"name": name}
+    if register_token:
+        payload["register_token"] = register_token
+
     response = httpx.post(
         f"{server.rstrip('/')}/device/register",
-        json={"name": name},
+        json=payload,
         timeout=20,
     )
     try:

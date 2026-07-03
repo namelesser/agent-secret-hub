@@ -5,6 +5,7 @@ from pydantic import BaseModel, Field
 
 class DeviceRegisterRequest(BaseModel):
     name: str = Field(min_length=1)
+    register_token: str | None = None
 
 
 class DeviceRegisterResponse(BaseModel):

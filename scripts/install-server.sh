@@ -12,6 +12,11 @@ PORT="${PORT:-8000}"
 BRANCH="${BRANCH:-main}"
 TARBALL_URL="${TARBALL_URL:-https://github.com/namelesser/agent-secret-hub/archive/refs/heads/${BRANCH}.tar.gz}"
 AUTO_UPDATE_TIMEOUT_SECONDS="${AUTO_UPDATE_TIMEOUT_SECONDS:-60}"
+REGISTER_TOKEN="${REGISTER_TOKEN:-$(python3 - <<'PY'
+import secrets
+print(secrets.token_urlsafe(24))
+PY
+)}"
 
 if [[ "${EUID}" -ne 0 ]]; then
   echo "请用 root 运行：sudo bash scripts/install-server.sh"
@@ -83,6 +88,7 @@ SQL
 
 cat > "${ENV_FILE}" <<EOF
 DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@127.0.0.1:5432/${DB_NAME}
+REGISTER_TOKEN=${REGISTER_TOKEN}
 EOF
 chmod 600 "${ENV_FILE}"
 
@@ -125,3 +131,4 @@ echo "服务地址：http://<服务器IP>:${PORT}"
 echo "健康检查：curl http://127.0.0.1:${PORT}/health"
 echo "查看日志：journalctl -u ${APP_NAME} -f"
 echo "数据库连接串已写入：${ENV_FILE}"
+echo "设备注册口令已写入：${ENV_FILE} 的 REGISTER_TOKEN"

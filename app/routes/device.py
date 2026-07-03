@@ -1,7 +1,8 @@
-from secrets import token_urlsafe
+import os
+from secrets import compare_digest, token_urlsafe
 from uuid import uuid4
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, HTTPException, Request, status
 
 from app.db import get_connection
 from app.models import (
@@ -23,6 +24,19 @@ def client_ip(request: Request) -> str | None:
 
 @router.post("/register", response_model=DeviceRegisterResponse)
 def register_device(payload: DeviceRegisterRequest, request: Request) -> dict[str, str]:
+    register_token = os.getenv("REGISTER_TOKEN")
+    if register_token and not compare_digest(payload.register_token or "", register_token):
+        record_audit(
+            device_id=None,
+            action="login",
+            ip=client_ip(request),
+            success=False,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid register token",
+        )
+
     token = token_urlsafe(32)
     with get_connection() as conn:
         row = conn.execute(
