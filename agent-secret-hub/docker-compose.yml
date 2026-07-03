@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: agent-secret-hub-postgres
+    environment:
+      POSTGRES_DB: agent_secret_hub
+      POSTGRES_USER: agent_secret
+      POSTGRES_PASSWORD: agent_secret
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U agent_secret -d agent_secret_hub"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  postgres-data:
+
