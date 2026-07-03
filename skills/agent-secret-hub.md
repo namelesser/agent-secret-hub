@@ -65,6 +65,16 @@ agent-secret audit           # 审计日志
 agent-secret update          # 更新客户端
 ```
 
+## 版本检查
+
+skill 和项目版本应保持一致。版本不一致时运行检查脚本自动更新：
+
+```bash
+bash ~/workspace/agent-secret-hub/scripts/check-version.sh
+```
+
+agent 在加载此 skill 时应先执行版本检查。
+
 ## 环境信息
 
 - CLI 路径：`~/.local/bin/agent-secret`
