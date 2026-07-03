@@ -19,8 +19,7 @@ from app.services.permissions import allow_device, revoke_device
 router = APIRouter(prefix="/device", tags=["device"])
 
 
-def client_ip(request: Request) -> str | None:
-    return request.client.host if request.client else None
+from app.utils.client_ip import client_ip
 
 
 @router.post("/register", response_model=DeviceRegisterResponse)

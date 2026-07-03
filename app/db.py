@@ -3,16 +3,27 @@ from collections.abc import Iterator
 
 import psycopg
 from psycopg.rows import dict_row
+from psycopg_pool import ConnectionPool
 
 
 DATABASE_URL = os.getenv(
     "DATABASE_URL",
-    "postgresql://agent_secret:agent_secret@localhost:5432/agent_secret_hub",
+    "postgresql://agent_secret:***@localhost:5432/agent_secret_hub",
 )
 
+pool: ConnectionPool | None = None
 
-def get_connection() -> psycopg.Connection:
-    return psycopg.connect(DATABASE_URL, row_factory=dict_row)
+
+def get_pool() -> ConnectionPool:
+    global pool
+    if pool is None:
+        pool = ConnectionPool(DATABASE_URL, min_size=2, max_size=10, kwargs={"row_factory": dict_row})
+    return pool
+
+
+def get_connection():
+    """返回连接上下文管理器，自动归还到连接池"""
+    return get_pool().connection()
 
 
 def db_cursor() -> Iterator[psycopg.Cursor]:

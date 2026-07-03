@@ -9,8 +9,7 @@ from app.services.secrets import list_shared_secrets
 router = APIRouter(tags=["sync"])
 
 
-def client_ip(request: Request) -> str | None:
-    return request.client.host if request.client else None
+from app.utils.client_ip import client_ip
 
 
 @router.get("/sync")

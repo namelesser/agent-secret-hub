@@ -17,8 +17,7 @@ from app.services.permissions import device_can_read
 router = APIRouter(prefix="/secrets", tags=["secrets"])
 
 
-def client_ip(request: Request) -> str | None:
-    return request.client.host if request.client else None
+from app.utils.client_ip import client_ip
 
 
 @router.post("", response_model=SecretResponse)
@@ -35,8 +34,8 @@ def create_secret(payload: SecretUpsertRequest, request: Request, device: Curren
 
 
 @router.get("")
-def all_secrets() -> list[SecretResponse]:
-    return list_secrets()
++def all_secrets(device: CurrentDevice) -> list[SecretResponse]:
++    return list_secrets(str(device["id"]))
 
 
 @router.get("/{name}", response_model=SecretResponse)

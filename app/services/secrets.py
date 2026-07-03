@@ -56,11 +56,23 @@ def get_secret(name: str) -> dict[str, Any]:
         return dict(row)
 
 
-def list_secrets() -> list[dict[str, Any]]:
+def list_secrets(device_id: str | None = None) -> list[dict[str, Any]]:
     with get_connection() as conn:
-        rows = conn.execute(
-            "SELECT name, type, data FROM secrets ORDER BY name"
-        ).fetchall()
+        if device_id:
+            rows = conn.execute(
+                """
+                SELECT s.name, s.type, s.data
+                FROM secrets s
+                INNER JOIN device_permissions dp
+                    ON dp.secret_name = s.name AND dp.device_id = %s
+                ORDER BY s.name
+                """,
+                (device_id,),
+            ).fetchall()
+        else:
+            rows = conn.execute(
+                "SELECT name, type, data FROM secrets ORDER BY name"
+            ).fetchall()
         return [dict(row) for row in rows]
 
 

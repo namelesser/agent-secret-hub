@@ -15,13 +15,17 @@ python3 -m venv "${SOURCE_DIR}/.venv"
 mkdir -p "${INSTALL_BIN}"
 cat > "${INSTALL_BIN}/agent-secret" <<EOF
 #!/usr/bin/env bash
-if [ -d "${SOURCE_DIR}/.git" ] && command -v git >/dev/null 2>&1; then
-  git -C "${SOURCE_DIR}" fetch origin main >/dev/null 2>&1 &&
-    git -C "${SOURCE_DIR}" checkout main >/dev/null 2>&1 &&
-    git -C "${SOURCE_DIR}" reset --hard origin/main >/dev/null 2>&1 &&
-    "${SOURCE_DIR}/.venv/bin/python" -m pip install -e "${SOURCE_DIR}" >/dev/null 2>&1 || true
+SOURCE_DIR="${SOURCE_DIR}"
+if [ -d "\${SOURCE_DIR}/.git" ] && command -v git >/dev/null 2>&1; then
+  if [ "\${AGENT_SECRET_AUTO_UPDATE:-0}" != "0" ]; then
+    git -C "\${SOURCE_DIR}" fetch origin main >/dev/null 2>&1 &&
+      git -C "\${SOURCE_DIR}" checkout main >/dev/null 2>&1 &&
+      git -C "\${SOURCE_DIR}" reset --hard origin/main >/dev/null 2>&1 &&
+      "\${SOURCE_DIR}/.venv/bin/python" -m pip install -e "\${SOURCE_DIR}" >/dev/null 2>&1 || true
+  fi
 fi
-exec "${SOURCE_DIR}/.venv/bin/agent-secret" "\$@"
+unset PYTHONPATH
+exec "\${SOURCE_DIR}/.venv/bin/agent-secret" "\$@"
 EOF
 chmod +x "${INSTALL_BIN}/agent-secret"
 
