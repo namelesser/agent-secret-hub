@@ -7,7 +7,7 @@ import sys
 from pathlib import Path
 
 import httpx
-from mcp.server import Server
+from mcp.server.lowlevel import Server
 from mcp.server.stdio import stdio_server
 from mcp.types import TextContent, Tool
 

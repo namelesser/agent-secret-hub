@@ -60,6 +60,39 @@ def init_db() -> None:
             );
             """
         )
+        conn.execute("ALTER TABLE secrets ADD COLUMN IF NOT EXISTS device_name TEXT;")
+        conn.execute(
+            """
+            DO $$
+            DECLARE constraint_name text;
+            BEGIN
+              SELECT conname INTO constraint_name
+              FROM pg_constraint
+              WHERE conrelid = 'secrets'::regclass
+                AND contype = 'u'
+                AND pg_get_constraintdef(oid) = 'UNIQUE (name)';
+              IF constraint_name IS NOT NULL THEN
+                EXECUTE format('ALTER TABLE secrets DROP CONSTRAINT %I', constraint_name);
+              END IF;
+            END $$;
+            """
+        )
+        conn.execute(
+            """
+            DELETE FROM secrets a
+            USING secrets b
+            WHERE a.device_name IS NULL
+              AND b.device_name IS NULL
+              AND a.name = b.name
+              AND a.ctid < b.ctid;
+            """
+        )
+        conn.execute(
+            "CREATE UNIQUE INDEX IF NOT EXISTS secrets_shared_name_uq ON secrets (name) WHERE device_name IS NULL;"
+        )
+        conn.execute(
+            "CREATE UNIQUE INDEX IF NOT EXISTS secrets_device_name_uq ON secrets (name, device_name) WHERE device_name IS NOT NULL;"
+        )
         conn.execute(
             """
             CREATE TABLE IF NOT EXISTS device_permissions (

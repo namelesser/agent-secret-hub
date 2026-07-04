@@ -29,7 +29,7 @@ $Wrapper = Join-Path $InstallBin "agent-secret.cmd"
 $PowerShellWrapper = Join-Path $InstallBin "agent-secret.ps1"
 Set-Content -Encoding UTF8 -Path $PowerShellWrapper -Value @"
 `$ErrorActionPreference = "SilentlyContinue"
-if (Test-Path "$SourceDir\.git") {
+if (`$env:AGENT_SECRET_AUTO_UPDATE -and `$env:AGENT_SECRET_AUTO_UPDATE -notin @("0", "false", "False", "no", "No") -and (Test-Path "$SourceDir\.git")) {
     git -C "$SourceDir" fetch origin main *> `$null
     if (`$LASTEXITCODE -eq 0) {
         git -C "$SourceDir" checkout main *> `$null
@@ -37,6 +37,7 @@ if (Test-Path "$SourceDir\.git") {
         & "$VenvPython" -m pip install -e "$SourceDir" *> `$null
     }
 }
+Remove-Item Env:PYTHONPATH -ErrorAction SilentlyContinue
 & "$AgentSecretExe" @args
 exit `$LASTEXITCODE
 "@

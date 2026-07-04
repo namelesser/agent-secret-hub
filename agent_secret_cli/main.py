@@ -14,8 +14,9 @@ import typer
 app = typer.Typer(
     help="个人多设备 Agent 凭证管理工具\n\n"
     "统一管理 API Key、Token、账号密码、数据库连接等敏感信息，\n"
-    "按设备授权读取权限，一键同步到 Hermes / OpenClaw / Codex 的 .env 文件。\n\n"
-    "基本流程：login → set → allow → sync"
+    "active 设备默认共享通用凭证，也支持 --device-only 本机专用凭证，\n"
+    "一键同步到 Hermes / OpenClaw / Codex 的 .env 文件。\n\n"
+    "基本流程：login → set → list/get → sync"
 )
 
 DEFAULT_SERVER = os.getenv("AGENT_SECRET_SERVER", "http://127.0.0.1:8000")
@@ -240,7 +241,7 @@ def set_secret(
 
 @app.command("list")
 def list_secrets() -> None:
-    """列出本设备已授权的所有凭证"""
+    """列出本设备可用的所有凭证（通用 + 本机专用）"""
     response = request("GET", "/secrets", headers=auth_headers())
     secrets = response.json()
     if not secrets:
@@ -316,7 +317,7 @@ def devices() -> None:
 def export(
     output: Annotated[str, typer.Option("--output", "-o", help="导出文件路径，默认 stdout")] = "",
 ) -> None:
-    """导出本设备已授权的所有凭证为 JSON"""
+    """导出本设备可用的所有凭证为 JSON"""
     response = request("GET", "/secrets", headers=auth_headers())
     data = response.json()
     content = json.dumps(data, indent=2, ensure_ascii=False)

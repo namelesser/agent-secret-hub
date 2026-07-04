@@ -83,7 +83,7 @@ GRANT ALL PRIVILEGES ON DATABASE ${DB_NAME} TO ${DB_USER};
 SQL
 
 cat > "${ENV_FILE}" <<EOF
-DATABASE_URL=postgresql://${DB_USER}:***@127.0.0.1:5432/${DB_NAME}
+DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@127.0.0.1:5432/${DB_NAME}
 REGISTER_TOKEN=${REGISTER_TOKEN}
 # HTTPS（可选）：取消注释并填入证书路径即可启用
 #SSL_CERTFILE=/etc/letsencrypt/live/your.domain/fullchain.pem

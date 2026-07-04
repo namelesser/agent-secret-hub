@@ -8,12 +8,13 @@ from app.db import get_connection
 
 
 def upsert_secret(name: str, secret_type: str, data: dict[str, Any], device_name: str | None = None) -> dict[str, Any]:
+    conflict = "(name) WHERE device_name IS NULL" if device_name is None else "(name, device_name) WHERE device_name IS NOT NULL"
     with get_connection() as conn:
         row = conn.execute(
-            """
+            f"""
             INSERT INTO secrets (id, name, device_name, type, data)
             VALUES (%s, %s, %s, %s, %s)
-            ON CONFLICT (name, device_name)
+            ON CONFLICT {conflict}
             DO UPDATE SET type = EXCLUDED.type, data = EXCLUDED.data, updated_at = NOW()
             RETURNING name, type, data
             """,

@@ -64,10 +64,10 @@ def read_secret(name: str, request: Request, device: CurrentDevice) -> dict:
 
 
 @router.put("/{name}", response_model=SecretResponse)
-def edit_secret(name: str, payload: SecretUpdateRequest, request: Request) -> dict:
+def edit_secret(name: str, payload: SecretUpdateRequest, request: Request, device: CurrentDevice) -> dict:
     secret = update_secret(name, payload.type, payload.data)
     record_audit(
-        device_id=None,
+        device_id=str(device["id"]),
         action="set_secret",
         secret_name=name,
         ip=client_ip(request),
@@ -78,7 +78,12 @@ def edit_secret(name: str, payload: SecretUpdateRequest, request: Request) -> di
 
 @router.delete("/{name}")
 def remove_secret(name: str, request: Request, device: CurrentDevice) -> dict[str, str]:
-    delete_secret(name)
+    try:
+        delete_secret(name, device_name=str(device["name"]))
+    except HTTPException as exc:
+        if exc.status_code != 404:
+            raise
+        delete_secret(name)
     record_audit(
         device_id=str(device["id"]),
         action="delete_secret",

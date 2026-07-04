@@ -12,7 +12,7 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(title="Agent Secret Hub", version="0.1.0", lifespan=lifespan)
+app = FastAPI(title="Agent Secret Hub", version="0.2.0", lifespan=lifespan)
 
 app.include_router(device.router)
 app.include_router(secret.router)

@@ -219,34 +219,27 @@ agent-secret set GITHUB --type token --data '{"token":"ghp_xxx"}'
 agent-secret set POSTGRES_MAIN --type database --data '{"host":"1.2.3.4","port":5432,"username":"postgres","password":"123456","database":"main"}'
 ```
 
+本机专用 secret：
+
+```bash
+agent-secret set PG_LOCAL --device-only --type database --data '{"host":"127.0.0.1","password":"xxx"}'
+```
+
 ### 3. 所有 active 设备默认共享
 
-每台电脑登录后，只要设备状态是 `active`，就可以读取和同步全部 secret。不需要再逐个执行 `allow`。
+每台电脑登录后，只要设备状态是 `active`，就可以读取和同步全部通用 secret。不需要再逐个执行 `allow`。
+
+如果用了 `--device-only`，该 secret 只对当前设备生效；读取时优先使用本设备专用值，没有则回退通用值。
 
 ### 4. 列出和获取 secret
 
 ```bash
-# 列出所有已授权凭证
+# 列出所有可用凭证
 agent-secret list
 
 # 获取单个凭证
 agent-secret get OPENAI
-```')
-print("✓ 添加 list 命令说明")
-
-# 5. 添加导入导出说明
-patch(readme,
-### 6. 导入导出
-
-```bash
-# 导出所有凭证为 JSON
-agent-secret export -o backup.json
-
-# 从 JSON 导入
-agent-secret import backup.json
 ```
-
-### 7. 查看设备和审计日志
 
 ### 5. 同步到 Agent `.env`
 
@@ -280,7 +273,17 @@ OPENAI_BASE_URL=https://api.openai.com/v1
 GITHUB_TOKEN=ghp_xxx
 ```
 
-### 6. 查看设备和审计日志
+### 6. 导入导出
+
+```bash
+# 导出所有可用凭证为 JSON
+agent-secret export -o backup.json
+
+# 从 JSON 导入
+agent-secret import backup.json
+```
+
+### 7. 查看设备和审计日志
 
 ```bash
 agent-secret devices
@@ -380,12 +383,19 @@ CREATE TABLE devices (
 
 CREATE TABLE secrets (
   id UUID PRIMARY KEY,
-  name TEXT UNIQUE NOT NULL,
+  name TEXT NOT NULL,
+  device_name TEXT,
   type TEXT NOT NULL,
   data JSONB NOT NULL,
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW()
 );
+
+CREATE UNIQUE INDEX secrets_shared_name_uq
+  ON secrets (name) WHERE device_name IS NULL;
+
+CREATE UNIQUE INDEX secrets_device_name_uq
+  ON secrets (name, device_name) WHERE device_name IS NOT NULL;
 
 CREATE TABLE device_permissions (
   device_id UUID NOT NULL,
@@ -405,4 +415,4 @@ CREATE TABLE audit_logs (
 );
 ```
 
-说明：`device_permissions` 是旧版逐设备授权表。当前共享模式不依赖它，保留只是为了兼容旧接口和旧数据库。
+说明：`device_name IS NULL` 表示通用 secret，所有 active 设备共享；`device_name` 有值表示该设备专用 secret。`device_permissions` 是旧版逐设备授权表，当前共享模式不依赖它，保留只是为了兼容旧接口和旧数据库。
